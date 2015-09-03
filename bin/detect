@@ -1,0 +1,2 @@
+#!/bin/sh
+echo "redis-copy" && exit 0

@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+set -e            # fail fast
+set -o pipefail   # don't ignore exit codes when piping output
+# set -x          # enable debugging
+
+# Configure directories
+build_dir=$1
+cache_dir=$2
+env_dir=$3
+
+# for sourcing .profile.d files below
+export HOME=$build_dir
+
+# Ensure the .profile.d directory exists
+mkdir -p $build_dir/.profile.d
+
+# Enables the system rubygems by pointing GEM_HOME at a writeable directory
+cat > $build_dir/.profile.d/ruby.sh <<-EOF
+export GEM_HOME="\$HOME/vendor/ruby_gems"
+export PATH="\$GEM_HOME/bin:\$PATH"
+EOF
+
+# Source it now so we can use gem!
+. $build_dir/.profile.d/ruby.sh
+
+echo "installing redis-copy"
+gem install --no-wrappers --no-document redis-copy
+
+# Rewrite redis-copy symlink
+RELATIVE_LINK=`python -c "import os.path; print os.path.relpath('$(readlink $build_dir/vendor/ruby_gems/bin/redis-copy)', '$build_dir/vendor/ruby_gems/bin')"`
+ln -sf $RELATIVE_LINK $build_dir/vendor/ruby_gems/bin/redis-copy
+
+exit 0
